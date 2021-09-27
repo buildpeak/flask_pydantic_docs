@@ -92,7 +92,7 @@ class OpenAPI:
         )
 
         # docs/openapi.json
-        @blueprint.route(f"{self.endpoint}/<filename>")
+        @blueprint.route(f"{self.endpoint}<filename>")
         def ___jsonfile___(filename: str):
             if filename == self.filename:
                 return jsonify(self.spec)
@@ -128,7 +128,9 @@ class OpenAPI:
         tags = {}
 
         for rule in self.app.url_map.iter_rules():
-            if str(rule).startswith(self.endpoint) or str(rule).startswith("/static"):
+            if str(rule).startswith(
+                (f"{self.url_prefix or ''}{self.endpoint}", "/static")
+            ):
                 continue
 
             func = self.app.view_functions[rule.endpoint]

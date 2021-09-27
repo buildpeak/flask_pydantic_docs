@@ -7,7 +7,7 @@ readme = (cwd / "README.md").read_text()
 
 setup(
     name="Flask-Pydantic-Docs",
-    version="0.0.9",
+    version="0.0.10",
     author="Steve Guo",
     author_email="buildpeak@gmail.com",
     description="Add openapi docs to flask app using Flask-Pydantic",
