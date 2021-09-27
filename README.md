@@ -13,6 +13,7 @@
 # necessary imports
 
 app = Flask(__name___)
+openapi = OpenAPI()
 
 access_denied = APIError(code=403, msg="Access Denied")
 
@@ -35,13 +36,8 @@ openapi.register(app)
 
 ```python
 # necessary imports, app and model definition
-# add routes on app or blueprint
-app.register_blueprint(some_blueprint)
-...
 
-# register openapi docs blueprint to `app`
-add_openapi_spec(
-    app,
+openapi = OpenAPI(
     extra_props={
         "components": {
             "securitySchemes": {
@@ -56,5 +52,9 @@ add_openapi_spec(
         "security": [{"bearerAuth": []}]
     },
 )
+
+...
+
+openapi.register(app)
 
 ```
