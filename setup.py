@@ -6,8 +6,8 @@ cwd = Path(__file__).resolve().parent
 readme = (cwd / "README.md").read_text()
 
 setup(
-    name="flask_pydantic_docs",
-    version="0.0.1",
+    name="Flask-Pydantic-Docs",
+    version="0.0.2",
     author="Steve Guo",
     author_email="buildpeak@gmail.com",
     description="Add openapi docs to flask app using Flask-Pydantic",
