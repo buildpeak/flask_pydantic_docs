@@ -1,1 +1,2 @@
-from .spec import OpenAPI
+from .openapi import OpenAPI
+from .openapi import openapi_docs
