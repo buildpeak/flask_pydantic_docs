@@ -1,2 +1,1 @@
-from .openapi import OpenAPI
-from .openapi import openapi_docs
+from .openapi import OpenAPI, APIError, openapi_docs
