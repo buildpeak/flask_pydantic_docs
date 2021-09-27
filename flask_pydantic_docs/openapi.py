@@ -239,8 +239,8 @@ def openapi_docs(
             res = func(*args, **kwargs)
             return res
 
-        query = func.__annotations__.get("query") or getattr(func, "_query")
-        body = func.__annotations__.get("body") or getattr(func, "_body")
+        query = func.__annotations__.get("query") or getattr(func, "_query", None)
+        body = func.__annotations__.get("body") or getattr(func, "_body", None)
 
         # register schemas to this function
         for schema, name in zip((query, body, response), ("query", "body", "response")):
