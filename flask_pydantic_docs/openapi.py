@@ -231,6 +231,7 @@ class OpenAPI:
                 "schemas": {name: schema for name, schema in self._models.items()},
             },
             "definitions": definitions,
+            **self.extra_props,
         }
 
         return data
