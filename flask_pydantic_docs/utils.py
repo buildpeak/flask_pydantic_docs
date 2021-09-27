@@ -93,3 +93,17 @@ def parse_url(path: str):
         )
 
     return "".join(subs), parameters
+
+def merge_dicts(d1, d2):
+    for k, v in d1.items():
+        if k in d2:
+            v2 = d2.pop(k)
+            if isinstance(v, dict):
+                if isinstance(v2, dict):
+                    merge_dicts(v, v2)
+                else:
+                    d1[k] = v2
+            else:
+                d1[k] = v2
+    d1.update(d2)
+    return d1

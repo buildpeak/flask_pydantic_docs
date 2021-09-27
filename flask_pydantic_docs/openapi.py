@@ -3,7 +3,7 @@ from typing import Callable, List, Optional, Type
 from flask import Flask, Blueprint, jsonify, abort, render_template
 from flask.views import MethodView
 from pydantic import BaseModel
-from .utils import parse_url, get_summary_desc
+from .utils import parse_url, get_summary_desc, merge_dicts
 
 OPENAPI_VERSION = "3.0.2"
 OPENAPI_INFO = dict(
@@ -231,8 +231,9 @@ class OpenAPI:
                 "schemas": {name: schema for name, schema in self._models.items()},
             },
             "definitions": definitions,
-            **self.extra_props,
         }
+
+        merge_dicts(data, self.extra_props)
 
         return data
 
