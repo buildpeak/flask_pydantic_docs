@@ -46,17 +46,29 @@ class APIError:
 class OpenAPI:
     _models = {}
 
-    def __init__(self) -> None:
-        self.name: str = OPENAPI_NAME
-        self.mode: str = OPENAPI_MODE
-        self.endpoint: str = OPENAPI_ENDPOINT
-        self.url_prefix: Optional[str] = OPENAPI_URL_PREFIX
-        self.template_folder: str = OPENAPI_TEMPLATE_FOLDER
-        self.filename: str = OPENAPI_FILENAME
-        self.openapi_version: str = OPENAPI_VERSION
-        self.info: dict = OPENAPI_INFO
-        self.ui: str = OPENAPI_UI
-        self.extra_props: dict = {}
+    def __init__(
+        self,
+        name: str = OPENAPI_NAME,
+        mode: str = OPENAPI_MODE,
+        endpoint: str = OPENAPI_ENDPOINT,
+        url_prefix: Optional[str] = OPENAPI_URL_PREFIX,
+        template_folder: str = OPENAPI_TEMPLATE_FOLDER,
+        filename: str = OPENAPI_FILENAME,
+        openapi_version: str = OPENAPI_VERSION,
+        openai_info: dict = OPENAPI_INFO,
+        ui: str = OPENAPI_UI,
+        extra_props: dict = {},
+    ) -> None:
+        self.name: str = name
+        self.mode: str = mode
+        self.endpoint: str = endpoint
+        self.url_prefix: Optional[str] = url_prefix
+        self.template_folder: str = template_folder
+        self.filename: str = filename
+        self.openapi_version: str = openapi_version
+        self.info: dict = openai_info
+        self.ui: str = ui
+        self.extra_props: dict = extra_props
 
         self._spec = None
 
