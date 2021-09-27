@@ -1,10 +1,24 @@
 import functools
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Type
 from flask import Flask, Blueprint, jsonify, abort, render_template
 from flask.views import MethodView
 from pydantic import BaseModel
-from werkzeug.exceptions import HTTPException
 from .utils import parse_url, get_summary_desc
+
+OPENAPI_VERSION = "3.0.2"
+OPENAPI_INFO = dict(
+    title="Service Documents",
+    version="latest",
+)
+
+OPENAPI_NAME = "docs"
+OPENAPI_ENDPOINT = "/docs/"
+OPENAPI_URL_PREFIX = None
+OPENAPI_MODE = "normal"
+
+OPENAPI_TEMPLATE_FOLDER = "templates"
+OPENAPI_FILENAME = "openapi.json"
+OPENAPI_UI = "swagger"
 
 
 class APIView(MethodView):
@@ -20,19 +34,30 @@ class APIView(MethodView):
         return render_template(ui_file, spec_url=self.filename)
 
 
-class OpenAPI:
-    def __init__(self) -> None:
-        self.name: str = "docs"
-        self.mode: str = "normal"
-        self.endpoint: str = "/docs/"
-        self.url_prefix: Optional[str] = None
-        self.template_folder: str = "templates"
-        self.filename: str = "openapi.json"
-        self.openapi_version: str = "3.0.2"
-        self.info: dict = dict(title="Service Documents", version="latest")
-        self.ui: str = "swagger"
+class APIError:
+    def __init__(self, code: int, msg: str) -> None:
+        self.code = code
+        self.msg = msg
 
-        self.models = {}
+    def __repr__(self) -> str:
+        return f"{self.code} {self.msg}"
+
+
+class OpenAPI:
+    _models = {}
+
+    def __init__(self) -> None:
+        self.name: str = OPENAPI_NAME
+        self.mode: str = OPENAPI_MODE
+        self.endpoint: str = OPENAPI_ENDPOINT
+        self.url_prefix: Optional[str] = OPENAPI_URL_PREFIX
+        self.template_folder: str = OPENAPI_TEMPLATE_FOLDER
+        self.filename: str = OPENAPI_FILENAME
+        self.openapi_version: str = OPENAPI_VERSION
+        self.info: dict = OPENAPI_INFO
+        self.ui: str = OPENAPI_UI
+        self.extra_props: dict = {}
+
         self._spec = None
 
     def register(self, app: Flask) -> None:
@@ -69,16 +94,16 @@ class OpenAPI:
             self._spec = self.generate_spec()
         return self._spec
 
-    def bypass(self, func) -> bool:
+    def _bypass(self, func) -> bool:
         if self.mode == "greedy":
             return False
         elif self.mode == "strict":
-            if getattr(func, "_decorator", None) == self:
+            if getattr(func, "_openapi", None) == self.__class__:
                 return False
             return True
         else:
-            decorator = getattr(func, "_decorator", None)
-            if decorator and decorator != self:
+            decorator = getattr(func, "_openapi", None)
+            if decorator and decorator != self.__class__:
                 return True
             return False
 
@@ -89,6 +114,7 @@ class OpenAPI:
 
         routes = {}
         tags = {}
+
         for rule in self.app.url_map.iter_rules():
             if str(rule).startswith(self.endpoint) or str(rule).startswith("/static"):
                 continue
@@ -97,7 +123,7 @@ class OpenAPI:
             path, parameters = parse_url(str(rule))
 
             # bypass the function decorated by others
-            if self.bypass(func):
+            if self._bypass(func):
                 continue
 
             # multiple methods (with different func) may bond to the same path
@@ -146,27 +172,31 @@ class OpenAPI:
 
                 spec["responses"] = {}
                 has_2xx = False
-                if hasattr(func, "exc"):
-                    for code, msg in func.exc.items():
+                if hasattr(func, "exceptions"):
+                    for code, msg in func.exceptions.items():
                         if code.startswith("2"):
                             has_2xx = True
                         spec["responses"][code] = {
                             "description": msg,
                         }
 
-                if hasattr(func, "resp"):
+                if hasattr(func, "response"):
                     spec["responses"]["200"] = {
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {"$ref": f"#/components/schemas/{func.resp}"}
+                                "schema": {
+                                    "$ref": f"#/components/schemas/{func.response}"
+                                }
                             }
                         },
                     }
                 elif not has_2xx:
                     spec["responses"]["200"] = {"description": "Successful Response"}
 
-                if any([hasattr(func, schema) for schema in ("query", "data", "resp")]):
+                if any(
+                    [hasattr(func, schema) for schema in ("query", "data", "response")]
+                ):
                     spec["responses"]["400"] = {
                         "description": "Validation Error",
                     }
@@ -174,7 +204,7 @@ class OpenAPI:
                 routes[path][method.lower()] = spec
 
         definitions = {}
-        for _, schema in self.models.items():
+        for _, schema in self._models.items():
             if "definitions" in schema:
                 for key, value in schema["definitions"].items():
                     definitions[key] = value
@@ -186,43 +216,53 @@ class OpenAPI:
             "tags": list(tags.values()),
             "paths": {**routes},
             "components": {
-                "schemas": {name: schema for name, schema in self.models.items()},
+                "schemas": {name: schema for name, schema in self._models.items()},
             },
             "definitions": definitions,
         }
 
         return data
 
-    def docs(self, resp=None, exc=[], tags=[]):
-        def decorate(func: Callable) -> Callable:
-            @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                res = func(*args, **kwargs)
-                return res
+    @classmethod
+    def add_model(cls, model):
+        cls._models[model.__name__] = model.schema()
 
-            query = func.__annotations__.get("query")
-            body = func.__annotations__.get("body")
 
-            # register schemas to this function
-            for schema, name in zip((query, body, resp), ("query", "body", "resp")):
-                if schema:
-                    assert issubclass(schema, BaseModel)
-                    self.models[schema.__name__] = schema.schema()
-                    setattr(wrapper, name, schema.__name__)
+def openapi_docs(
+    response: Optional[Type[BaseModel]] = None,
+    exceptions: List[APIError] = [],
+    tags: List[str] = [],
+):
+    def decorate(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            res = func(*args, **kwargs)
+            return res
 
-            # store exception for doc
-            code_msg = {}
-            for e in exc:
-                assert isinstance(e, HTTPException)
-                code_msg[str(e.code)] = str(e)
-            if code_msg:
-                wrapper.exc = code_msg
+        query = func.__annotations__.get("query") or getattr(func, "_query")
+        body = func.__annotations__.get("body") or getattr(func, "_body")
 
-            if tags:
-                setattr(wrapper, "tags", tags)
+        # register schemas to this function
+        for schema, name in zip((query, body, response), ("query", "body", "response")):
+            if schema:
+                assert issubclass(schema, BaseModel)
+                OpenAPI.add_model(schema)
+                setattr(wrapper, name, schema.__name__)
 
-            setattr(wrapper, "_decorator", self)
+        # store exception for doc
+        api_errs = {}
+        for e in exceptions:
+            assert isinstance(e, APIError)
+            api_errs[str(e.code)] = e.msg
+        if api_errs:
+            setattr(wrapper, "exceptions", api_errs)
 
-            return wrapper
+        if tags:
+            setattr(wrapper, "tags", tags)
 
-        return decorate
+        # register OpenAPI class
+        setattr(wrapper, "_openapi", OpenAPI)
+
+        return wrapper
+
+    return decorate
