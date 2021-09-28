@@ -209,7 +209,7 @@ class OpenAPI:
                     spec["responses"]["200"] = {"description": "Successful Response"}
 
                 if any(
-                    [hasattr(func, schema) for schema in ("query", "data", "response")]
+                    [hasattr(func, schema) for schema in ("query", "body", "response")]
                 ):
                     spec["responses"]["400"] = {
                         "description": "Validation Error",

@@ -32,7 +32,13 @@ def post(body: BodyModel, query: QueryModel):
 openapi.register(app)
 ```
 
-#### Add Auth Security Schemes
+**NOTE**:
+
+- Since the `openapi_docs` decorator is to register the schemas based on the models used by the view function, so the models have to be put in the view function arguments with annotations as shown in the above example. Otherwise, the schemas cannot be captured.
+
+- The statement `openapi.register` needs to be run after all view functions or `register_blueprint`.
+
+### Add Auth Security Schemes
 
 ```python
 # necessary imports, app and model definition
