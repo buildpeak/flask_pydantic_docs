@@ -55,10 +55,12 @@ class OpenAPI:
         template_folder: str = OPENAPI_TEMPLATE_FOLDER,
         filename: str = OPENAPI_FILENAME,
         openapi_version: str = OPENAPI_VERSION,
-        openai_info: dict = OPENAPI_INFO,
+        openapi_info: dict = OPENAPI_INFO,
         ui: str = OPENAPI_UI,
         extra_props: dict = {},
     ) -> None:
+        if not endpoint.endswith("/"):
+            endpoint += "/"
         self.name: str = name
         self.mode: str = mode
         self.endpoint: str = endpoint
@@ -66,7 +68,7 @@ class OpenAPI:
         self.template_folder: str = template_folder
         self.filename: str = filename
         self.openapi_version: str = openapi_version
-        self.info: dict = openai_info
+        self.info: dict = openapi_info
         self.ui: str = ui
         self.extra_props: dict = extra_props
 
