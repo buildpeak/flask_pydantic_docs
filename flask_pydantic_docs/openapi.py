@@ -219,13 +219,22 @@ class OpenAPI:
 
                 routes[path][method.lower()] = spec
 
+        schemas = {}
+        for name, schema in self._models.items():
+            if "definitions" in schema:
+                for key, value in schema["definitions"].items():
+                    schemas[key] = value
+                del schema["definitions"]
+            else:
+                schema[name] = schema
+
         data = {
             "openapi": self.openapi_version,
             "info": self.info,
             "tags": list(tags.values()),
             "paths": {**routes},
             "components": {
-                "schemas": {name: schema for name, schema in self._models.items()},
+                "schemas": schemas,
             },
         }
 
@@ -235,7 +244,9 @@ class OpenAPI:
 
     @classmethod
     def add_model(cls, model):
-        cls._models[model.__name__] = model.schema()
+        cls._models[model.__name__] = model.schema(
+            ref_template="#/components/schemas/{model}"
+        )
 
 
 def openapi_docs(
