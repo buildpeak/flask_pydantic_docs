@@ -51,7 +51,6 @@ openapi = OpenAPI(
                     "type": "http",
                     "scheme": "bearer",
                     "bearerFormat": "JWT",
-                    "in": "header",
                 }
             }
         },

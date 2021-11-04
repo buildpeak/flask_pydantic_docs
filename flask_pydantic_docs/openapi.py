@@ -159,7 +159,7 @@ class OpenAPI:
                 spec = {
                     "summary": summary or func.__name__.capitalize(),
                     "description": desc or "",
-                    "operationID": func.__name__ + "__" + method.lower(),
+                    "operationId": func.__name__ + "__" + method.lower(),
                     "tags": getattr(func, "tags", []),
                 }
 
