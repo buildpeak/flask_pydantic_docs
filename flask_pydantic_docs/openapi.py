@@ -219,13 +219,6 @@ class OpenAPI:
 
                 routes[path][method.lower()] = spec
 
-        definitions = {}
-        for _, schema in self._models.items():
-            if "definitions" in schema:
-                for key, value in schema["definitions"].items():
-                    definitions[key] = value
-                del schema["definitions"]
-
         data = {
             "openapi": self.openapi_version,
             "info": self.info,
@@ -234,7 +227,6 @@ class OpenAPI:
             "components": {
                 "schemas": {name: schema for name, schema in self._models.items()},
             },
-            "definitions": definitions,
         }
 
         merge_dicts(data, self.extra_props)
