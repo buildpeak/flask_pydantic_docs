@@ -221,12 +221,11 @@ class OpenAPI:
 
         schemas = {}
         for name, model in self._models.items():
+            schemas[name] = model
             if "definitions" in model:
                 for key, value in model["definitions"].items():
                     schemas[key] = value
                 del model["definitions"]
-            else:
-                schemas[name] = model
 
         data = {
             "openapi": self.openapi_version,
