@@ -220,13 +220,13 @@ class OpenAPI:
                 routes[path][method.lower()] = spec
 
         schemas = {}
-        for name, schema in self._models.items():
-            if "definitions" in schema:
-                for key, value in schema["definitions"].items():
+        for name, model in self._models.items():
+            if "definitions" in model:
+                for key, value in model["definitions"].items():
                     schemas[key] = value
-                del schema["definitions"]
+                del model["definitions"]
             else:
-                schema[name] = schema
+                schemas[name] = model
 
         data = {
             "openapi": self.openapi_version,
@@ -264,11 +264,11 @@ def openapi_docs(
         body = func.__annotations__.get("body") or getattr(func, "_body", None)
 
         # register schemas to this function
-        for schema, name in zip((query, body, response), ("query", "body", "response")):
-            if schema:
-                assert issubclass(schema, BaseModel)
-                OpenAPI.add_model(schema)
-                setattr(wrapper, name, schema.__name__)
+        for model, name in zip((query, body, response), ("query", "body", "response")):
+            if model:
+                assert issubclass(model, BaseModel)
+                OpenAPI.add_model(model)
+                setattr(wrapper, name, model.__name__)
 
         # store exception for doc
         api_errs = {}
